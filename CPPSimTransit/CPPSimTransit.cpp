@@ -8,9 +8,27 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <list>
+#include <unordered_map>
 
 using namespace std;
+/*
+template <class T>
+struct DNode {
+	T* next;
+	T* prev;
+};
 
+template <class T>
+struct DList {
+	T* head;
+	void add(T* node) {
+		head = node;
+	}
+	void remove(T* node) {
+	}
+};
+*/
 struct Station {
 	string name;
 	int id;
@@ -30,10 +48,15 @@ struct Driver {
 
 struct SimData {
 	vector<Route> routes;
+	vector<Traveler> travelers;
+	list<Driver> drivers;
+	
+	unordered_map<int, Station> stations;
 };
 
-Route parseRoute(string file) {
+Route parseRoute(string file, unordered_map<int, Station>* cache) {
 	ifstream infile("data/"+file);
+	if(infile.good()==false) exit(1);
 	stringstream buffer;
 	
 	bool firstl=true;
@@ -46,6 +69,8 @@ Route parseRoute(string file) {
 			if(firstl) firstl=false;
 			else {
 				buffer >> s.id;
+				if( (*cache).find(s.id) != (*cache).end() ) s=(*cache)[s.id];
+				else (*cache)[s.id] = s;
 				route.stations.push_back(s);
 				s = Station();
 			}
@@ -66,8 +91,10 @@ Route parseRoute(string file) {
 int main(int argc, char argv[])
 {
 	SimData data;
-	data.routes.push_back( parseRoute("47VanNess.csv") );
-	data.routes.push_back( parseRoute("49Mission.csv") );
+	data.routes.push_back( parseRoute("47VanNess.csv", &data.stations) );
+	data.routes.push_back( parseRoute("49Mission.csv", &data.stations) );
+	
+	cout << "at: " << data.stations[13163].name << endl;
 	/*
 	auto r = data.routes.front();
 	for(auto s : r.stations) {
