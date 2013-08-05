@@ -1,0 +1,64 @@
+queue<string> parseCSV(string& file) {
+	queue<string> q;
+	
+	ifstream infile("data/"+file);
+	if(infile.good()==false) exit(1);
+	stringstream buffer;
+	
+	Route route;
+	Station s;
+	
+	while( infile.good()  ) {
+		char c = infile.get();
+		if(c=='\r') continue; 
+		if(c=='\n' || c==',') {
+			q.push( buffer.str() );
+			buffer.str(string()); // reset stream
+			if(infile.peek()==' ') infile.get();
+		}
+		else buffer << c;
+	}
+	infile.close();
+
+	return q;
+}
+
+Route parseRoute2(string& file, unordered_map<int, Station>& cache) {
+	auto r = parseCSV(file);
+
+	Route route = {r.front()}; r.pop();r.pop();
+	while(!r.empty()) {
+		string name = r.front(); r.pop();
+		int id = stoi(r.front()); r.pop();
+		Station *s;
+		if( cache.count(id) == 1 ) s = &cache[id];
+		else {
+			s = &Station(); s->name = name; s->id = id;
+			cache[id] = *s;
+		}
+		route.stations.push_back( *s );
+	}
+	return route;
+}
+
+
+
+
+
+// CSV reader
+/*
+template <typename T> T read(std::istream& is)
+{
+  T t; is >> t; return t;
+}
+
+template <typename ...Args>
+Tuple<Args...> fileToTuple(string file) {
+	ifstream infile("data/"+file);
+
+	auto p = std::make_tuple( read<Args>(infile)... );
+	infile.close();
+	return p;
+}
+*/
+// =======

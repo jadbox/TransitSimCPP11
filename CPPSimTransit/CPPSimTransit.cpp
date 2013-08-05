@@ -1,7 +1,5 @@
 // CPPSimTransit.cpp : Defines the entry point for the console application.
 //
-
-//#include "stdafx.h"
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -10,25 +8,11 @@
 #include <vector>
 #include <list>
 #include <unordered_map>
+#include <tuple>
+#include <queue>
 
 using namespace std;
-/*
-template <class T>
-struct DNode {
-	T* next;
-	T* prev;
-};
 
-template <class T>
-struct DList {
-	T* head;
-	void add(T* node) {
-		head = node;
-	}
-	void remove(T* node) {
-	}
-};
-*/
 struct Station {
 	string name;
 	int id;
@@ -54,36 +38,31 @@ struct SimData {
 	unordered_map<int, Station> stations;
 };
 
-Route parseRoute(string file, unordered_map<int, Station>* cache) {
-	ifstream infile("data/"+file);
-	if(infile.good()==false) exit(1);
-	stringstream buffer;
-	
-	bool firstl=true;
-	Route route;
-	Station s;
-	
-	while( infile.good()  ) {
-		char c = infile.get();
-		if(c=='\n') {
-			if(firstl) firstl=false;
-			else {
-				buffer >> s.id;
-				if( (*cache).find(s.id) != (*cache).end() ) s=(*cache)[s.id];
-				else (*cache)[s.id] = s;
-				route.stations.push_back(s);
-				s = Station();
-			}
-			buffer = stringstream();
-		}
-		else if(c==',') {
-			if(firstl) route.name = buffer.str();
-			else s.name = buffer.str();
-			
-			buffer = stringstream();
-		}
-		else buffer << c;
+// Parse stream into a Route and containing Stations
+std::istream& operator>> (std::istream& is, Route& r)
+{
+    getline(is, r.name, ',');
+	if(is.peek()==' ') is.get();
+    string skip;
+	getline(is, skip, '\n');
+	while(is.good()) {
+		Station s;
+		getline(is, s.name, ',');
+		if(is.peek()==' ') is.get();
+		is >> s.id;
+		r.stations.push_back(s);
 	}
+
+    return is;
+}
+// Open CSV file and create a Route while hashing the Stations
+Route parseRoute(string& file, unordered_map<int, Station>& hash) {
+	ifstream infile("data/"+file);
+
+	Route route;
+	infile >> route;
+	for(auto& s : route.stations) hash[s.id] = s;
+
 	infile.close();
 	return route;
 }
@@ -91,19 +70,20 @@ Route parseRoute(string file, unordered_map<int, Station>* cache) {
 int main(int argc, char argv[])
 {
 	SimData data;
-	data.routes.push_back( parseRoute("47VanNess.csv", &data.stations) );
-	data.routes.push_back( parseRoute("49Mission.csv", &data.stations) );
+	string files[] = {"47VanNess", "49Mission", "8xBayshore", "KIngleside", "LTaraval", "NJudah", "TThird"};
+	for(auto &f : files) data.routes.push_back( parseRoute(f+".csv", data.stations) );
 	
 	cout << "at: " << data.stations[13163].name << endl;
-	/*
-	auto r = data.routes.front();
-	for(auto s : r.stations) {
-		cout << s.name << "++" << s.id << endl;
-	}
-	*/
+
+	cout << "Stations: " << data.stations.size();
+
 
 	int i;
 	cin >> i;
+	return 0;
+}
+
+int something() {
 	return 0;
 }
 
