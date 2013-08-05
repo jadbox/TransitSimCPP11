@@ -24,7 +24,22 @@ struct Route {
 struct Traveler {
 	string name;
 	int start;
+	int end;
 };
+// Stream to Travelers
+std::istream& operator>> (std::istream& is, vector<Traveler>& l)
+{
+	while(is.good()) {
+		Traveler d;
+		getline(is, d.name, ',');
+		is >> d.start; is.get();
+		is >> d.end; 
+		getline(is, string(), '\n'); // force next line
+		l.push_back(d);
+	}
+	return is;
+}
+
 struct Driver {
 	string name;
 	int start;
@@ -92,6 +107,7 @@ void init(SimData& data) {
 	for(auto &f : files) data.routes.push_back( parseRoute(f, data.stations) );
 
 	parse<list<Driver>>( string("drivers"), data.drivers );
+	parse<vector<Traveler>>( string("passengers"), data.travelers );
 }
 
 int main(int argc, char argv[])
@@ -99,10 +115,11 @@ int main(int argc, char argv[])
 	SimData data;
 	init(data);
 	
-	cout << "at: " << data.stations[13163].name << endl;
+	cout << "Hash Test: " << data.stations[13163].name << endl;
 
-	cout << "Stations: " << data.stations.size();
-
+	cout << "Stations: " << data.stations.size() << endl;
+	cout << "Drivers: " << data.drivers.size() << endl;
+	cout << "Passengers: " << data.travelers.size() << endl;
 
 	int i;
 	cin >> i;
