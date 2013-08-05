@@ -28,7 +28,21 @@ struct Traveler {
 struct Driver {
 	string name;
 	int start;
+	int trips;
 };
+// Stream to Drivers
+std::istream& operator>> (std::istream& is, list<Driver>& l)
+{
+	while(is.good()) {
+		Driver d;
+		getline(is, d.name, ',');
+		is >> d.start; is.get();
+		is >> d.trips; 
+		getline(is, string(), '\n'); // force next line
+		l.push_back(d);
+	}
+	return is;
+}
 
 struct SimData {
 	vector<Route> routes;
@@ -55,23 +69,35 @@ std::istream& operator>> (std::istream& is, Route& r)
 
     return is;
 }
+
+template <typename T>
+T parse(string& file, T& t) {
+	ifstream infile("data/"+file+".csv");
+	//T t;
+	infile >> t;
+	infile.close();
+	return t;
+}
+
 // Open CSV file and create a Route while hashing the Stations
 Route parseRoute(string& file, unordered_map<int, Station>& hash) {
-	ifstream infile("data/"+file);
-
 	Route route;
-	infile >> route;
+	parse<Route>(file, route);
 	for(auto& s : route.stations) hash[s.id] = s;
-
-	infile.close();
 	return route;
+}
+
+void init(SimData& data) {
+	string files[] = {"47VanNess", "49Mission", "8xBayshore", "KIngleside", "LTaraval", "NJudah", "TThird"};
+	for(auto &f : files) data.routes.push_back( parseRoute(f, data.stations) );
+
+	parse<list<Driver>>( string("drivers"), data.drivers );
 }
 
 int main(int argc, char argv[])
 {
 	SimData data;
-	string files[] = {"47VanNess", "49Mission", "8xBayshore", "KIngleside", "LTaraval", "NJudah", "TThird"};
-	for(auto &f : files) data.routes.push_back( parseRoute(f+".csv", data.stations) );
+	init(data);
 	
 	cout << "at: " << data.stations[13163].name << endl;
 
