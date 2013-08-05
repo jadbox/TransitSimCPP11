@@ -98,7 +98,7 @@ T parse(string& file, T& t) {
 Route parseRoute(string& file, unordered_map<int, Station>& hash) {
 	Route route;
 	parse<Route>(file, route);
-	for(auto& s : route.stations) hash[s.id] = s;
+	for(auto& s : route.stations) hash[s.id] = s; //TODO: do not create duplicate Stations
 	return route;
 }
 
