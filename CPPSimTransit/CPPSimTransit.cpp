@@ -88,7 +88,6 @@ std::istream& operator>> (std::istream& is, Route& r)
 template <typename T>
 T parse(string& file, T& t) {
 	ifstream infile("data/"+file+".csv");
-	//T t;
 	infile >> t;
 	infile.close();
 	return t;
