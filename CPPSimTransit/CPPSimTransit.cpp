@@ -10,21 +10,19 @@
 #include <unordered_map>
 #include <tuple>
 #include <queue>
+#include <algorithm>
 
 using namespace std;
+typedef int sid;
 
 struct Station {
 	string name;
-	int id;
-};
-struct Route {
-	string name;
-	vector<Station> stations;
+	sid id;
 };
 struct Traveler {
 	string name;
-	int start;
-	int end;
+	sid start;
+	sid end;
 };
 // Stream to Travelers
 std::istream& operator>> (std::istream& is, vector<Traveler>& l)
@@ -41,30 +39,65 @@ std::istream& operator>> (std::istream& is, vector<Traveler>& l)
 }
 
 struct Driver {
+	Driver():trips(0){}
 	string name;
-	int start;
-	int trips;
+	sid start;
+	sid trips;
+};
+
+struct Vehicle {
+	Vehicle(Driver Driver, sid StopID, int Capacity, vector<Station> GoingTo, bool reversePath=false):driver(Driver),capacity(Capacity), goingTo(GoingTo), sindex(0) {
+		if(reversePath) reverse(goingTo.begin(), goingTo.end());
+	}
+	vector<Station> goingTo;
+	Driver driver;
+	int sindex;
+	int capacity;
+	int travelers;
+
+	sid currentStationID() {
+		return goingTo[sindex].id;
+	}
+	void step() {
+		sindex++;
+		if(sindex >= goingTo.size()-1) {
+			//cout << driver.name << " reversing" << endl;
+			reverse(goingTo.begin(), goingTo.end());
+			sindex = 0;
+			driver.trips++;
+		}
+	}
+};
+
+struct Route {
+	string name;
+	vector<Station> stations;
+	sid& startID() { return stations[0].id; }
+	sid& endID() { return stations[stations.size()-1].id; }
 };
 // Stream to Drivers
-std::istream& operator>> (std::istream& is, list<Driver>& l)
+std::istream& operator>> (std::istream& is, unordered_map<sid, list<Driver>>& l)
 {
 	while(is.good()) {
 		Driver d;
 		getline(is, d.name, ',');
 		is >> d.start; is.get();
 		is >> d.trips; 
+		if(d.name.length() > 0) l[d.start].push_back(d);
 		getline(is, string(), '\n'); // force next line
-		l.push_back(d);
 	}
 	return is;
 }
 
+
 struct SimData {
 	vector<Route> routes;
 	vector<Traveler> travelers;
-	list<Driver> drivers;
-	
-	unordered_map<int, Station> stations;
+
+	unordered_map<sid, list<Driver>> drivers; // Station to int
+	unordered_map<sid, Station> stations;
+
+	vector<Vehicle> vehicles; 
 };
 
 // Parse stream into a Route and containing Stations
@@ -112,8 +145,44 @@ void parse(SimData& data) {
 	parse("passengers", data.travelers );
 }
 
-void setup(SimData& data) {
+template <typename T>
+T pop_back(list<T>& list) {
+	T b = list.back();
+	list.pop_back();
+	return b;
+}
 
+Driver getDriver(SimData& data, const sid& id) {
+	return pop_back( data.drivers[id] );
+}
+
+void setup(SimData& data) {
+	// Put two Vehicles with drivers on every Route
+	for(auto& r : data.routes) {
+		Driver d1 = getDriver(data, r.startID());
+		Driver d2 = getDriver(data, r.endID());
+		Vehicle v1 ( d1, r.startID(), 10, r.stations );
+		Vehicle v2 ( d2, r.endID(), 10, r.stations, true );
+		
+		data.vehicles.push_back( v1 );
+		data.vehicles.push_back( v2 );
+	}
+}
+
+void step(SimData& data) {
+	for(auto& v : data.vehicles) {
+		//cout << v.driver.name << " from: " << v.currentStationID();
+		v.step();
+		if(v.driver.trips==3) {
+			cout << v.driver.name << " is down, ";
+			v.driver = getDriver(data, v.currentStationID());
+			cout << v.driver.name << " is a new driver" << endl;
+		}
+		//cout << " To: " << v.currentStationID() << endl;
+	}
+	for(auto& p: data.travelers) {
+		
+	}
 }
 
 int main(int argc, char argv[])
@@ -128,7 +197,10 @@ int main(int argc, char argv[])
 	cout << "Passengers: " << data.travelers.size() << endl;
 
 	setup(data);
-	cout << "Setup completed.";
+	cout << "Setup completed." << endl;
+
+	for(int i = 0; i < 39*4; i++) step(data);
+	cout << "steps completed" << endl;
 
 	int i;
 	cin >> i;
