@@ -72,53 +72,63 @@ std::istream& operator>> (std::istream& is, Route& r)
 {
     getline(is, r.name, ',');
 	if(is.peek()==' ') is.get();
-    string skip;
-	getline(is, skip, '\n');
+	getline(is, string(), '\n');
 	while(is.good()) {
 		Station s;
 		getline(is, s.name, ',');
 		if(is.peek()==' ') is.get();
 		is >> s.id;
-		r.stations.push_back(s);
+		getline(is, string(), '\n');
+		if(s.name.length() > 0) r.stations.push_back(s);
 	}
 
     return is;
 }
 
 template <typename T>
-T parse(string& file, T& t) {
+T parse(const string& file, T& t) {
 	ifstream infile("data/"+file+".csv");
+
 	infile >> t;
 	infile.close();
 	return t;
 }
 
 // Open CSV file and create a Route while hashing the Stations
-Route parseRoute(string& file, unordered_map<int, Station>& hash) {
+Route parseRoute(const string& file, unordered_map<int, Station>& hash) {
 	Route route;
-	parse<Route>(file, route);
-	for(auto& s : route.stations) hash[s.id] = s; //TODO: do not create duplicate Stations
+	parse(file, route);
+	for(auto& s : route.stations) {
+		if(hash.count(s.id)==0) hash[s.id] = s; //TODO: do not create duplicate Stations
+	}
 	return route;
 }
 
-void init(SimData& data) {
+void parse(SimData& data) {
 	string files[] = {"47VanNess", "49Mission", "8xBayshore", "KIngleside", "LTaraval", "NJudah", "TThird"};
 	for(auto &f : files) data.routes.push_back( parseRoute(f, data.stations) );
 
-	parse<list<Driver>>( string("drivers"), data.drivers );
-	parse<vector<Traveler>>( string("passengers"), data.travelers );
+	parse("drivers", data.drivers );
+	parse("passengers", data.travelers );
+}
+
+void setup(SimData& data) {
+
 }
 
 int main(int argc, char argv[])
 {
 	SimData data;
-	init(data);
+	parse(data);
 	
 	cout << "Hash Test: " << data.stations[13163].name << endl;
 
 	cout << "Stations: " << data.stations.size() << endl;
 	cout << "Drivers: " << data.drivers.size() << endl;
 	cout << "Passengers: " << data.travelers.size() << endl;
+
+	setup(data);
+	cout << "Setup completed.";
 
 	int i;
 	cin >> i;
